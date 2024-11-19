@@ -372,7 +372,7 @@ class PushToHubMixin:
         create_pr: bool = False,
     ):
         """
-        Uploads all files in `working_dir` to `repo_id`.
+        Uploads all files in `` to `repo_id`.
         """
         if commit_message is None:
             if "Model" in self.__class__.__name__:
