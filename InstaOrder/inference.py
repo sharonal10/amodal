@@ -10,9 +10,8 @@ from skimage.morphology import convex_hull
 from sklearn.metrics import precision_score, recall_score, f1_score
 import collections
 import matplotlib.pyplot as plt
-from .utils.data_utils import transform_rgb, transform_resize, get_closest_int_multiple_of
-
-# from utils.data_utils import transform_rgb, transform_resize, get_closest_int_multiple_of
+# from .utils.data_utils import transform_rgb, transform_resize, get_closest_int_multiple_of
+from utils.data_utils import transform_rgb, transform_resize, get_closest_int_multiple_of
 import copy
 
 
