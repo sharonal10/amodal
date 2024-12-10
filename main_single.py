@@ -51,7 +51,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Run the Progressive Occlusion-aware Completion pipeline')
     parser.add_argument('--input_img',         type=str,  help="Input image")
     parser.add_argument('--input_mask',        type=str,  help="Input inpainting mask")
-    parser.add_argument('--text',              type=str,  default=None, help="Optional text to use for sanity checking")
+    parser.add_argument('--texts',             type=str,  nargs='+',  help='Provide multiple words as a list')
     parser.add_argument('--output_dir',        type=str,  default="./output")
     parser.add_argument('--gdino_config',      type=str,  default="Grounded-Segment-Anything/GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py")
     parser.add_argument('--gdino_ckpt',        type=str,  default="Grounded-Segment-Anything/groundingdino_swint_ogc.pth")
@@ -581,7 +581,6 @@ def run_iteration(
     mc_clean_bkgd_img,
     sd_target_size=512,
     save_interm=True,  # Whether to save intermediate images
-    use_class=False
 ):
     """
     Returns whether to run an additional iteration
@@ -720,57 +719,59 @@ def run_pipeline(args):
     # img, masks, class_names, pred_scores = segment(gdino_model, run_sam, args.sam_ckpt, img_pil, img_tensor, classes)
     # if masks is None: return  # If no masks are detected, then proceed to the next image
 
-    use_class = args.text is not None
-    if use_class:
-        classes = [args.text]
-        class_names = [args.text]
-        pred_scores = [1]
-    else:
-        classes = class_names = pred_scores = None
+    classes = list(set(args.texts))
+    class_names = args.texts
+    pred_scores = [1 for _ in args.texts]
 
-    mask_path = args.input_mask
-    query_mask = np.array(Image.open(mask_path).convert('L'))
-    mask_id = 0
-    masks = [query_mask]
+    mask_dir = args.input_masks
+    mask_files = sorted(
+        [f for f in os.listdir(mask_dir) if f.startswith("mask_") and f.endswith(".png")],
+        key=lambda x: int(x.split("_")[1].split(".")[0])  # Extract numerical ID from filenames
+    )
+    masks = []
+    for mask_file in mask_files:
+        mask_path = os.path.join(mask_dir, mask_file)
+        mask = np.array(Image.open(mask_path).convert('L'))  # Convert mask to grayscale
+        masks.append(mask)
 
     img = np.array(img_pil)
 
     img_offsets_dict = {}
-    query_obj = QueryObject(img_path, img, img_pil, mask_id, query_mask, output_img_dir)
+    for mask_id, query_mask in enumerate(masks):
+        query_obj = QueryObject(img_path, img, img_pil, mask_id, query_mask, output_img_dir)
 
-    while query_obj.run_iter:
-        query_obj = run_iteration(
-            query_obj,
-            args.output_dir,
-            masks,
-            classes,
-            class_names,
-            pred_scores,
-            gdino_model,
-            args.sam_ckpt,
-            instaorder_model,
-            sd_inpaint_model,
-            lama_model,
-            args.mc_timestep,
-            args.mc_clean_bkgd_img,
-            save_interm=args.save_interm,
-            use_class=use_class
-        )
-        if query_obj.iter_id > args.max_iter_id: break
+        while query_obj.run_iter:
+            query_obj = run_iteration(
+                query_obj,
+                args.output_dir,
+                masks,
+                classes,
+                class_names,
+                pred_scores,
+                gdino_model,
+                args.sam_ckpt,
+                instaorder_model,
+                sd_inpaint_model,
+                lama_model,
+                args.mc_timestep,
+                args.mc_clean_bkgd_img,
+                save_interm=args.save_interm
+            )
+            if query_obj.iter_id > args.max_iter_id: break
 
-    # Post-processing
-    if query_obj.amodal_segmentation is not None and query_obj.iter_id > 0:
-        query_class = query_obj.query_class
-        x_offset, y_offset = compute_offset(query_obj.query_mask_canvas, query_obj.init_outpaint_mask_canvas, query_obj.amodal_segmentation)
-        img_offsets_dict[f'{query_class}_{query_obj.mask_id}'] = [x_offset, y_offset]
-        img_offset_save_path = os.path.join(query_obj.output_img_dir, "offsets.json")
-        with open(img_offset_save_path, 'w') as fp:
-            json.dump(img_offsets_dict, fp, sort_keys=True, indent=4)
+        # Post-processing
+        if query_obj.amodal_segmentation is not None and query_obj.iter_id > 0:
+            query_class = query_obj.query_class
+            x_offset, y_offset = compute_offset(query_obj.query_mask_canvas, query_obj.init_outpaint_mask_canvas, query_obj.amodal_segmentation)
+            img_offsets_dict[f'{query_class}_{query_obj.mask_id}'] = [x_offset, y_offset]
+            img_offset_save_path = os.path.join(query_obj.output_img_dir, "offsets.json")
+            with open(img_offset_save_path, 'w') as fp:
+                json.dump(img_offsets_dict, fp, sort_keys=True, indent=4)
 
-        amodal_completion_to_save = query_obj.amodal_completion
-        amodal_completion_to_save.save(os.path.join(query_obj.output_img_dir, "amodal_completions", f'{query_class}_{mask_id}.jpg'), quality=90)
-        amodal_segmentation_to_save = Image.fromarray(query_obj.amodal_segmentation * 255).convert("RGB")
-        amodal_segmentation_to_save.save(os.path.join(query_obj.output_img_dir, "amodal_segmentations", f'{query_class}_{mask_id}.png'))
+            amodal_completion_to_save = query_obj.amodal_completion
+            amodal_completion_to_save.save(os.path.join(query_obj.output_img_dir, "amodal_completions", f'{query_class}_{mask_id}.jpg'), quality=90)
+            amodal_segmentation_to_save = Image.fromarray(query_obj.amodal_segmentation * 255).convert("RGB")
+            amodal_segmentation_to_save.save(os.path.join(query_obj.output_img_dir, "amodal_segmentations", f'{query_class}_{mask_id}.png'))
 
 
 if __name__ == '__main__':
