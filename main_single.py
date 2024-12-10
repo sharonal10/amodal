@@ -50,7 +50,7 @@ class QueryObject:
 def parse_args():
     parser = argparse.ArgumentParser(description='Run the Progressive Occlusion-aware Completion pipeline')
     parser.add_argument('--input_img',         type=str,  help="Input image")
-    parser.add_argument('--input_mask',        type=str,  help="Input inpainting mask")
+    parser.add_argument('--input_mask_dir',    type=str,  help="Dir containing input segmentation masks")
     parser.add_argument('--texts',             type=str,  nargs='+',  help='Provide multiple words as a list')
     parser.add_argument('--output_dir',        type=str,  default="./output")
     parser.add_argument('--gdino_config',      type=str,  default="Grounded-Segment-Anything/GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py")
@@ -723,7 +723,7 @@ def run_pipeline(args):
     class_names = args.texts
     pred_scores = [1 for _ in args.texts]
 
-    mask_dir = args.input_masks
+    mask_dir = args.input_mask_dir
     mask_files = sorted(
         [f for f in os.listdir(mask_dir) if f.startswith("mask_") and f.endswith(".png")],
         key=lambda x: int(x.split("_")[1].split(".")[0])  # Extract numerical ID from filenames
