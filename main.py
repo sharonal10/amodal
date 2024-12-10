@@ -722,6 +722,8 @@ def run_pipeline(args):
         mask_dir = os.path.join(output_dir, "masks")
         os.makedirs(mask_dir, exist_ok=True)
         for i, mask in enumerate(masks):
+            # Ensure mask is uint8 and 2D
+            mask = np.squeeze(mask).astype(np.uint8)  # Convert to uint8 and remove extra dimensions
             mask_image = Image.fromarray(mask * 255).convert("L")  # Convert binary mask to grayscale
             mask_image.save(os.path.join(mask_dir, f"mask_{i}.png"))
 
