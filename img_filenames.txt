@@ -1,2 +1,6 @@
-COCO_val2014_000000001532.jpg
-COCO_val2014_000000003867.jpg
+1_table.jpg
+1_chair.jpg
+2_table.jpg
+2_chair.jpg
+1.png
+2.png

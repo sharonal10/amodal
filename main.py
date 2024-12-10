@@ -12,8 +12,9 @@ import glob
 import json
 import cv2
 import yaml
+sys.path.insert(0, '/viscam/projects/image2Blender/garfield_new/amodal/InstaOrder')
 
-sys.path.append('InstaOrder')
+sys.path.append(os.path.abspath('InstaOrder'))
 import models
 import inference as infer
 
@@ -23,7 +24,7 @@ import GroundingDINO.groundingdino.datasets.transforms as T
 from GroundingDINO.groundingdino.models import build_model
 from GroundingDINO.groundingdino.util.slconfig import SLConfig
 from GroundingDINO.groundingdino.util.utils import clean_state_dict, get_phrases_from_posmap
-from segment_anything import build_sam, SamPredictor 
+from segment_anything.segment_anything import build_sam, SamPredictor 
 
 from diffusers import StableDiffusionInpaintPipeline, StableDiffusionInpaintMixedContextPipeline
 from omegaconf import OmegaConf
