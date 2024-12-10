@@ -715,7 +715,7 @@ def run_pipeline(args):
     if use_class:
         classes = [args.text]
         class_names = [args.text]
-        pred_scores = 1
+        pred_scores = [1]
 
     mask_path = args.input_mask
     query_mask = np.array(Image.open(mask_path).convert('L'))
