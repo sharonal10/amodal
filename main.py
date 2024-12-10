@@ -714,7 +714,9 @@ def run_pipeline(args):
         output_dir = "test_outputs"
         os.makedirs(output_dir, exist_ok=True)
         img, masks, class_names, pred_scores = segment(gdino_model, run_sam, args.sam_ckpt, img_pil, img_tensor, classes)
-        img.save(os.path.join(output_dir, "image.png"))
+        print(img, masks, class_names, pred_scores)
+        img_pil = Image.fromarray(img)
+        img_pil.save(os.path.join(output_dir, "image.png"))
 
         # Save the masks
         mask_dir = os.path.join(output_dir, "masks")
@@ -728,8 +730,6 @@ def run_pipeline(args):
         with open(metadata_path, "w") as f:
             for class_name, score in zip(class_names, pred_scores):
                 f.write(f"{class_name}: {score:.2f}\n")
-
-        print(f"Outputs saved in '{output_dir}'")
         assert False
         if masks is None: continue  # If no masks are detected, then proceed to the next image
 
