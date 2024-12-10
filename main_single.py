@@ -768,6 +768,7 @@ def run_pipeline(args):
             img_offsets_dict[f'{query_class}_{query_obj.mask_id}'] = [x_offset, y_offset]
             img_offset_save_path = os.path.join(query_obj.output_img_dir, "offsets.json")
             with open(img_offset_save_path, 'w') as fp:
+                print(img_offset_save_path)
                 json.dump(img_offsets_dict, fp, sort_keys=True, indent=4)
 
             amodal_completion_to_save = query_obj.amodal_completion
