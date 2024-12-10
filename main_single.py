@@ -255,10 +255,10 @@ def check_valid_query(
     query_class = class_names[mask_id]
     pred_score = pred_scores[mask_id]
 
-    print('---')
-    print(pred_score < query_pred_score_thresh, pred_score, query_pred_score_thresh)
-    print(query_mask.sum() < query_mask_size_thresh * img.shape[0] * img.shape[1], query_mask.sum(), query_mask_size_thresh * img.shape[0] * img.shape[1])
-    print(query_class not in classes, query_class, classes)
+    # print('---')
+    # print(pred_score < query_pred_score_thresh, pred_score, query_pred_score_thresh)
+    # print(query_mask.sum() < query_mask_size_thresh * img.shape[0] * img.shape[1], query_mask.sum(), query_mask_size_thresh * img.shape[0] * img.shape[1])
+    # print(query_class not in classes, query_class, classes)
 
     if pred_score < query_pred_score_thresh or query_mask.sum() < query_mask_size_thresh * img.shape[0] * img.shape[1]: return
     if query_class not in classes: return
@@ -591,7 +591,7 @@ def run_iteration(
     query_mask = query_obj.query_mask
 
     check_query = check_valid_query(img, mask_id, query_mask, class_names, pred_scores, classes, save_interm=save_interm, output_img_dir=query_obj.output_img_dir)
-    print(check_query)
+    # print(check_query)
     if check_query is None:
         query_obj.run_iter = False
         query_obj.amodal_segmentation = None
@@ -605,7 +605,7 @@ def run_iteration(
 
     # Check occlusion by image boundary
     sides_touched = check_touch_boundary(query_mask)
-    print(occ_mask.sum(), len(sides_touched))
+    # print(occ_mask.sum(), len(sides_touched))
     query_obj.run_iter = True if (occ_mask.sum() > 0 or len(sides_touched) > 0) else False
     if not query_obj.run_iter:
         query_obj.amodal_segmentation = None
@@ -760,6 +760,8 @@ def run_pipeline(args):
             if query_obj.iter_id > args.max_iter_id: break
 
         # Post-processing
+        print(mask_id)
+        print(query_obj.amodal_segmentation is not None, query_obj.iter_id)
         if query_obj.amodal_segmentation is not None and query_obj.iter_id > 0:
             query_class = query_obj.query_class
             x_offset, y_offset = compute_offset(query_obj.query_mask_canvas, query_obj.init_outpaint_mask_canvas, query_obj.amodal_segmentation)
