@@ -13,6 +13,6 @@ export TORCH_HOME=$(pwd)/lama && export PYTHONPATH=$(pwd)/lama
 python main_single.py \
 --input_img /viscam/projects/image2Blender/scenes/1.png \
 --text table \
---input_mask /viscam/projects/image2Blender/masks/1-table.png
+--input_mask /viscam/projects/image2Blender/masks/1-table.png \
 --mc_timestep 35 \
 --output_dir ./output
