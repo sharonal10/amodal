@@ -592,6 +592,7 @@ def run_iteration(
     query_mask = query_obj.query_mask
 
     check_query = check_valid_query(img, mask_id, query_mask, class_names, pred_scores, classes, save_interm=save_interm, output_img_dir=query_obj.output_img_dir)
+    print(check_query)
     if check_query is None:
         query_obj.run_iter = False
         query_obj.amodal_segmentation = None
@@ -605,6 +606,7 @@ def run_iteration(
 
     # Check occlusion by image boundary
     sides_touched = check_touch_boundary(query_mask)
+    print(occ_mask.sum(), len(sides_touched))
     query_obj.run_iter = True if (occ_mask.sum() > 0 or len(sides_touched) > 0) else False
     if not query_obj.run_iter:
         query_obj.amodal_segmentation = None
@@ -690,6 +692,7 @@ def run_iteration(
         crop_y_max,
         save_interm,
     )
+    print('hi')
     return query_obj
 
 
