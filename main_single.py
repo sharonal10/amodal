@@ -255,6 +255,11 @@ def check_valid_query(
     query_class = class_names[mask_id]
     pred_score = pred_scores[mask_id]
 
+    print('---')
+    print(pred_score < query_pred_score_thresh, pred_score, query_pred_score_thresh)
+    print(query_mask.sum() < query_mask_size_thresh * img.shape[0] * img.shape[1], query_mask.sum(), query_mask_size_thresh * img.shape[0] * img.shape[1])
+    print(query_class not in classes, query_class, classes)
+
     if pred_score < query_pred_score_thresh or query_mask.sum() < query_mask_size_thresh * img.shape[0] * img.shape[1]: return
     if query_class not in classes: return
 
@@ -576,6 +581,7 @@ def run_iteration(
     mc_clean_bkgd_img,
     sd_target_size=512,
     save_interm=True,  # Whether to save intermediate images
+    use_class=False
 ):
     """
     Returns whether to run an additional iteration
@@ -716,6 +722,8 @@ def run_pipeline(args):
         classes = [args.text]
         class_names = [args.text]
         pred_scores = [1]
+    else:
+        classes = class_names = pred_scores = None
 
     mask_path = args.input_mask
     query_mask = np.array(Image.open(mask_path).convert('L'))
@@ -743,6 +751,7 @@ def run_pipeline(args):
             args.mc_timestep,
             args.mc_clean_bkgd_img,
             save_interm=args.save_interm,
+            use_class=use_class
         )
         if query_obj.iter_id > args.max_iter_id: break
 
