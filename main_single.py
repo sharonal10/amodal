@@ -604,17 +604,6 @@ def run_iteration(
     occluder_masks = analyze_masks(instaorder_model, img, masks, mask_id)
     occ_mask = aggregate_occluders(query_mask, occluder_masks, query_class, mask_id, query_obj.iter_id, save_interm=save_interm, output_img_dir=query_obj.output_img_dir)
 
-    occ_mask_dir = os.path.join(query_obj.output_img_dir, "occ_masks", f"{mask_id}")
-    os.makedirs(occ_mask_dir, exist_ok=True)
-
-    for idx, occluder_mask in enumerate(occluder_masks):
-        occluder_mask_path = os.path.join(occ_mask_dir, f"occluder_{idx}.png")
-        Image.fromarray((occluder_mask * 255).astype(np.uint8)).convert("L").save(occluder_mask_path)
-
-    # Save the aggregated occ_mask
-    occ_mask_path = os.path.join(occ_mask_dir, "occ_mask.png")
-    Image.fromarray((occ_mask * 255).astype(np.uint8)).convert("L").save(occ_mask_path)
-
     # Check occlusion by image boundary
     sides_touched = check_touch_boundary(query_mask)
     # print(occ_mask.sum(), len(sides_touched))
@@ -722,7 +711,7 @@ def run_pipeline(args):
     # Create output directories
     os.makedirs(output_img_dir, exist_ok=True)
     if args.save_interm:
-        subdirs = ["amodal_completions", "amodal_segmentations"]
+        subdirs = ["amodal_completions", "amodal_segmentations", "final"]
         for subdir in subdirs:
             os.makedirs(os.path.join(output_img_dir, subdir), exist_ok=True)
 
@@ -787,6 +776,17 @@ def run_pipeline(args):
             amodal_completion_to_save.save(os.path.join(query_obj.output_img_dir, "amodal_completions", f'{query_class}_{mask_id}.jpg'), quality=90)
             amodal_segmentation_to_save = Image.fromarray(query_obj.amodal_segmentation * 255).convert("RGB")
             amodal_segmentation_to_save.save(os.path.join(query_obj.output_img_dir, "amodal_segmentations", f'{query_class}_{mask_id}.png'))
+
+            masked_img = np.array(query_obj.amodal_completion)
+            masked_img[query_obj.amodal_segmentation == 0] = 0
+            masked_img_pil = Image.fromarray(masked_img)
+            masked_img_pil.save(os.path.join(query_obj.output_img_dir, "final", f'{mask_id}.png'))
+
+        else:
+            masked_img = np.array(img_pil)
+            masked_img[masks[mask_id] == 0] = 0
+            masked_img_pil = Image.fromarray(masked_img)
+            masked_img_pil.save(os.path.join(query_obj.output_img_dir, "final", f'{mask_id}.png'))
 
 
 if __name__ == '__main__':
