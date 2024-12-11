@@ -700,7 +700,7 @@ def run_pipeline(args):
     os.makedirs(args.output_dir, exist_ok=True)
 
     img_path = args.input_img
-    img_basename = img_path.split(".")[0]
+    img_basename = os.path.splitext(os.path.basename(img_path))[0]
     img_pil = Image.open(img_path).convert('RGB')
     output_img_dir = os.path.join(args.output_dir, img_basename)
 
