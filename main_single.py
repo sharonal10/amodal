@@ -260,7 +260,8 @@ def check_valid_query(
     # print(query_mask.sum() < query_mask_size_thresh * img.shape[0] * img.shape[1], query_mask.sum(), query_mask_size_thresh * img.shape[0] * img.shape[1])
     # print(query_class not in classes, query_class, classes)
 
-    if pred_score < query_pred_score_thresh or query_mask.sum() < query_mask_size_thresh * img.shape[0] * img.shape[1]: return
+    # if pred_score < query_pred_score_thresh or query_mask.sum() < query_mask_size_thresh * img.shape[0] * img.shape[1]: return
+    if pred_score < query_pred_score_thresh: return
     if query_class not in classes: return
 
     return query_mask, query_class
@@ -602,6 +603,17 @@ def run_iteration(
     # Analyze masks to determine occluders
     occluder_masks = analyze_masks(instaorder_model, img, masks, mask_id)
     occ_mask = aggregate_occluders(query_mask, occluder_masks, query_class, mask_id, query_obj.iter_id, save_interm=save_interm, output_img_dir=query_obj.output_img_dir)
+
+    occ_mask_dir = os.path.join(query_obj.output_img_dir, "occ_masks", f"{mask_id}")
+    os.makedirs(occ_mask_dir, exist_ok=True)
+
+    for idx, occluder_mask in enumerate(occluder_masks):
+        occluder_mask_path = os.path.join(occ_mask_dir, f"occluder_{idx}.png")
+        Image.fromarray((occluder_mask * 255).astype(np.uint8)).convert("L").save(occluder_mask_path)
+
+    # Save the aggregated occ_mask
+    occ_mask_path = os.path.join(occ_mask_dir, "occ_mask.png")
+    Image.fromarray((occ_mask * 255).astype(np.uint8)).convert("L").save(occ_mask_path)
 
     # Check occlusion by image boundary
     sides_touched = check_touch_boundary(query_mask)
