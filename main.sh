@@ -15,4 +15,4 @@ python main_single.py \
 --texts table chair chair chair chair chair chair \
 --input_mask_dir /viscam/projects/image2Blender/amodal/test_outputs/masks \
 --mc_timestep 35 \
---output_dir ./output3
+--output_dir ./output4

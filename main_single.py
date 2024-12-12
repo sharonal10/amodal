@@ -517,6 +517,20 @@ def compute_offset(expanded_query_mask, init_outpainting_mask, amodal_segmentati
     y_offset = int(query_y_coord - amodal_y_coord - orig_y_coord)
     return x_offset, y_offset
 
+def uncrop_and_save(cropped_image, crop_x_min, crop_x_max, crop_y_min, crop_y_max, original_shape, save_path):
+    """
+    Place a cropped image back into its original position in a blank canvas.
+    """
+    # Create a blank canvas with the original shape
+    uncropped_image = np.zeros(original_shape, dtype=cropped_image.dtype)
+
+    # Place the cropped image in its original location
+    uncropped_image[crop_x_min:crop_x_max, crop_y_min:crop_y_max] = cropped_image
+
+    # Convert to PIL image and save
+    uncropped_image_pil = Image.fromarray(uncropped_image)
+    uncropped_image_pil.save(save_path, quality=90)
+
 
 def run_mixed_context_diffusion(
     query_obj,
@@ -779,8 +793,15 @@ def run_pipeline(args):
 
             masked_img = np.array(query_obj.amodal_completion)
             masked_img[query_obj.amodal_segmentation == 0] = 0
-            masked_img_pil = Image.fromarray(masked_img)
-            masked_img_pil.save(os.path.join(query_obj.output_img_dir, "final", f'{mask_id}.png'))
+            uncrop_and_save(
+                masked_img,
+                crop_x_min=query_obj.init_query_mask_canvas.shape[0] // 2,
+                crop_x_max=query_obj.init_query_mask_canvas.shape[0] // 2 + masked_img.shape[0],
+                crop_y_min=query_obj.init_query_mask_canvas.shape[1] // 2,
+                crop_y_max=query_obj.init_query_mask_canvas.shape[1] // 2 + masked_img.shape[1],
+                original_shape=query_obj.img.shape,
+                save_path=os.path.join(query_obj.output_img_dir, "final", f'{mask_id}.png')
+            )
 
         else:
             masked_img = np.array(img_pil)
