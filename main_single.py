@@ -517,39 +517,6 @@ def compute_offset(expanded_query_mask, init_outpainting_mask, amodal_segmentati
     y_offset = int(query_y_coord - amodal_y_coord - orig_y_coord)
     return x_offset, y_offset
 
-def uncrop_and_save(cropped_image, crop_x_min, crop_x_max, crop_y_min, crop_y_max, original_shape, save_path):
-    """
-    Place a cropped image back into its original position in a blank canvas.
-    """
-    # size_multiplier = 6
-    # crop_x_min = int(crop_x_min / size_multiplier)
-    # crop_x_max = int(crop_x_max / size_multiplier)
-    # crop_y_min = int(crop_y_min / size_multiplier)
-    # crop_y_max = int(crop_y_max / size_multiplier)
-
-    print('heights', crop_x_min, crop_x_max, crop_y_min, crop_y_max, original_shape)
-
-    # Validate the dimensions
-    cropped_height, cropped_width = cropped_image.shape[:2]
-    uncropped_height = crop_x_max - crop_x_min
-    uncropped_width = crop_y_max - crop_y_min
-
-    if cropped_height != uncropped_height or cropped_width != uncropped_width:
-        raise ValueError(f"Mismatch between cropped and uncropped dimensions: "
-                         f"cropped ({cropped_height}, {cropped_width}), "
-                         f"uncropped ({uncropped_height}, {uncropped_width}).")
-    
-
-    # Create a blank canvas with the original shape
-    uncropped_image = np.zeros([original_shape[0] * 6, original_shape[1] * 6, original_shape[2]], dtype=cropped_image.dtype)
-
-    # Place the cropped image in its original location
-    uncropped_image[crop_x_min:crop_x_max, crop_y_min:crop_y_max] = cropped_image
-
-    # Convert to PIL image and save
-    uncropped_image_pil = Image.fromarray(uncropped_image)
-    uncropped_image_pil.save(save_path, quality=90)
-
 
 def run_mixed_context_diffusion(
     query_obj,
@@ -798,8 +765,8 @@ def run_pipeline(args):
         print(query_obj.amodal_segmentation is not None, query_obj.iter_id)
         if query_obj.amodal_segmentation is not None and query_obj.iter_id > 0:
             query_class = query_obj.query_class
-            x_offset, y_offset = compute_offset(query_obj.query_mask_canvas, query_obj.init_outpaint_mask_canvas, query_obj.amodal_segmentation)
-            img_offsets_dict[f'{query_class}_{query_obj.mask_id}'] = [x_offset, y_offset]
+            offset_x, offset_y = compute_offset(query_obj.query_mask_canvas, query_obj.init_outpaint_mask_canvas, query_obj.amodal_segmentation)
+            img_offsets_dict[f'{query_class}_{query_obj.mask_id}'] = [offset_x, offset_y]
             img_offset_save_path = os.path.join(query_obj.output_img_dir, "offsets.json")
             with open(img_offset_save_path, 'w') as fp:
                 print(img_offset_save_path)
@@ -821,7 +788,27 @@ def run_pipeline(args):
                 original_shape=query_obj.img.shape,
                 save_path=os.path.join(query_obj.output_img_dir, "final", f'{mask_id}.png')
             )
+            uncropped_image = np.zeros(query_obj.img.shape, dtype=masked_img.dtype)
+            crop_h, crop_w, _ = masked_img.shape
+            canvas_h, canvas_w, _ = uncropped_image.shape
 
+            crop_x_start = max(0, -offset_x)  # If offset_x is negative, trim the top of the cropped image
+            crop_y_start = max(0, -offset_y)  # If offset_y is negative, trim the left of the cropped image
+            crop_x_end = min(crop_h, canvas_h - offset_x)  # Ensure we don't go out of bounds vertically
+            crop_y_end = min(crop_w, canvas_w - offset_y)  # Ensure we don't go out of bounds horizontally
+
+            # Determine the placement region on the canvas
+            canvas_x_start = max(0, offset_x)  # If offset_x is positive, start placing from there
+            canvas_y_start = max(0, offset_y)  # If offset_y is positive, start placing from there
+            canvas_x_end = canvas_x_start + (crop_x_end - crop_x_start)
+            canvas_y_end = canvas_y_start + (crop_y_end - crop_y_start)
+
+            # Paste the valid region of the cropped image onto the canvas
+            uncropped_image[canvas_x_start:canvas_x_end, canvas_y_start:canvas_y_end] = \
+                masked_img[crop_x_start:crop_x_end, crop_y_start:crop_y_end]
+            
+            uncropped_image_pil = Image.fromarray(uncropped_image)
+            uncropped_image_pil.save(os.path.join(query_obj.output_img_dir, "final", f'{mask_id}.png'))
         else:
             masked_img = np.array(img_pil)
             masked_img[masks[mask_id] == 0] = 0
