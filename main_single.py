@@ -521,6 +521,20 @@ def uncrop_and_save(cropped_image, crop_x_min, crop_x_max, crop_y_min, crop_y_ma
     """
     Place a cropped image back into its original position in a blank canvas.
     """
+
+    print('heights', crop_x_min, crop_x_max, crop_y_min, crop_y_max, original_shape)
+
+    # Validate the dimensions
+    cropped_height, cropped_width = cropped_image.shape[:2]
+    uncropped_height = crop_x_max - crop_x_min
+    uncropped_width = crop_y_max - crop_y_min
+
+    if cropped_height != uncropped_height or cropped_width != uncropped_width:
+        raise ValueError(f"Mismatch between cropped and uncropped dimensions: "
+                         f"cropped ({cropped_height}, {cropped_width}), "
+                         f"uncropped ({uncropped_height}, {uncropped_width}).")
+    
+
     # Create a blank canvas with the original shape
     uncropped_image = np.zeros(original_shape, dtype=cropped_image.dtype)
 
