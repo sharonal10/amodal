@@ -779,15 +779,6 @@ def run_pipeline(args):
 
             masked_img = np.array(query_obj.amodal_completion)
             masked_img[query_obj.amodal_segmentation == 0] = 0
-            uncrop_and_save(
-                masked_img,
-                crop_x_min=query_obj.init_query_mask_canvas.shape[0] // 2,
-                crop_x_max=query_obj.init_query_mask_canvas.shape[0] // 2 + masked_img.shape[0],
-                crop_y_min=query_obj.init_query_mask_canvas.shape[1] // 2,
-                crop_y_max=query_obj.init_query_mask_canvas.shape[1] // 2 + masked_img.shape[1],
-                original_shape=query_obj.img.shape,
-                save_path=os.path.join(query_obj.output_img_dir, "final", f'{mask_id}.png')
-            )
             uncropped_image = np.zeros(query_obj.img.shape, dtype=masked_img.dtype)
             crop_h, crop_w, _ = masked_img.shape
             canvas_h, canvas_w, _ = uncropped_image.shape
