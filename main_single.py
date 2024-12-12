@@ -541,7 +541,7 @@ def uncrop_and_save(cropped_image, crop_x_min, crop_x_max, crop_y_min, crop_y_ma
     
 
     # Create a blank canvas with the original shape
-    uncropped_image = np.zeros([dim * 6 for dim in original_shape], dtype=cropped_image.dtype)
+    uncropped_image = np.zeros([original_shape[0] * 6, original_shape[1] * 6, original_shape[2]], dtype=cropped_image.dtype)
 
     # Place the cropped image in its original location
     uncropped_image[crop_x_min:crop_x_max, crop_y_min:crop_y_max] = cropped_image
