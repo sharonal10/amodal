@@ -521,6 +521,11 @@ def uncrop_and_save(cropped_image, crop_x_min, crop_x_max, crop_y_min, crop_y_ma
     """
     Place a cropped image back into its original position in a blank canvas.
     """
+    size_multiplier = 6
+    crop_x_min = int(crop_x_min / size_multiplier)
+    crop_x_max = int(crop_x_max / size_multiplier)
+    crop_y_min = int(crop_y_min / size_multiplier)
+    crop_y_max = int(crop_y_max / size_multiplier)
 
     print('heights', crop_x_min, crop_x_max, crop_y_min, crop_y_max, original_shape)
 
