@@ -778,8 +778,10 @@ def run_pipeline(args):
             amodal_segmentation_to_save.save(os.path.join(query_obj.output_img_dir, "amodal_segmentations", f'{query_class}_{mask_id}.png'))
 
             masked_img = np.array(query_obj.amodal_completion)
+            alpha_channel = np.full(masked_img.shape[:2], 255, dtype=np.uint8)
+            masked_img = np.dstack((masked_img, alpha_channel))
             masked_img[query_obj.amodal_segmentation == 0] = 0
-            uncropped_image = np.zeros(query_obj.img.shape, dtype=masked_img.dtype)
+            uncropped_image = np.zeros(query_obj.img.shape[:2] + (4,), dtype=masked_img.dtype)
             crop_h, crop_w, _ = masked_img.shape
             canvas_h, canvas_w, _ = uncropped_image.shape
 
@@ -802,6 +804,8 @@ def run_pipeline(args):
             uncropped_image_pil.save(os.path.join(query_obj.output_img_dir, "final", f'{mask_id}.png'))
         else:
             masked_img = np.array(img_pil)
+            alpha_channel = np.full(masked_img.shape[:2], 255, dtype=np.uint8)
+            masked_img = np.dstack((masked_img, alpha_channel))
             masked_img[masks[mask_id] == 0] = 0
             masked_img_pil = Image.fromarray(masked_img)
             masked_img_pil.save(os.path.join(query_obj.output_img_dir, "final", f'{mask_id}.png'))
